@@ -81,9 +81,9 @@
   </style>
 </head>
 <body class="bg-light">
-  <!-- Daily Ad Counter (Top-Right) -->
+  <!-- Daily Ad Counter -->
   <div class="ad-counter" id="adCounter">
-     Today's Ads: <span id="todayAdCount">0</span>
+    📊 Today's Ads: <span id="todayAdCount">0</span>
   </div>
 
   <!-- Ad Loading Overlay -->
@@ -98,19 +98,14 @@
   <!-- Main Game -->
   <div class="container py-5">
     <div class="card shadow p-4 mx-auto" style="max-width: 500px;">
-      <h3 class="mb-4 text-center"> Captcha Typing Game</h3>
-
+      <h3 class="mb-4 text-center">🔢 Captcha Typing Game</h3>
       <div id="progressDisplay" class="mb-3 fw-bold text-center fs-5"></div>
-
       <div class="captcha-box border rounded p-3 text-center mb-4" id="captchaDisplay"></div>
-      
       <div class="text-center mb-4">
         <span id="timer" class="badge bg-warning text-dark fs-5">10</span>
       </div>
-
       <input type="number" id="captchaInput" class="form-control mb-4" 
              placeholder="Type the number" inputmode="numeric" disabled />
-
       <button id="nextButton" class="btn btn-primary w-100 py-2" disabled>Next</button>
     </div>
   </div>
@@ -140,7 +135,7 @@
 
     // Game Variables
     let captchaCount = 0;
-    let todaysAds = 0;
+    let todaysAds = parseInt(localStorage.getItem('todaysAds')) || 0;
     let lastPlayedDate = localStorage.getItem('lastPlayedDate');
     let totalAds = parseInt(localStorage.getItem('totalAds')) || 0;
 
@@ -149,8 +144,6 @@
       localStorage.setItem('lastPlayedDate', new Date().toDateString());
       localStorage.setItem('todaysAds', '0');
       todaysAds = 0;
-    } else {
-      todaysAds = parseInt(localStorage.getItem('todaysAds')) || 0;
     }
 
     // Update UI
@@ -172,8 +165,6 @@
     // Update progress text
     function updateProgress() {
       progressDisplay.textContent = `Captcha ${captchaCount + 1} of 10`;
-      
-      // Change button to "Submit" on last captcha
       nextButton.textContent = captchaCount === 9 ? 'Submit' : 'Next';
     }
 
@@ -206,16 +197,27 @@
 
     // Show interstitial ad (Android WebView)
     function showInterstitialAd(callback) {
-      adOverlay.style.display = 'flex';
       let adShown = false;
+      let minLoadingTimePassed = false;
       
-      // Fallback after 15s
-      let timeout = setTimeout(() => {
+      // Show overlay immediately
+      adOverlay.style.display = 'flex';
+      
+      // Minimum 3s loading time
+      setTimeout(() => {
+        minLoadingTimePassed = true;
+        if (adShown) {
+          adOverlay.style.display = 'none';
+        }
+      }, 3000);
+      
+      // Maximum 10s timeout
+      const timeout = setTimeout(() => {
         if (!adShown) {
           adOverlay.style.display = 'none';
           callback(false);
         }
-      }, 15000);
+      }, 10000);
 
       // Android interface check
       if (window.Android && typeof window.Android.showInterstitialAd === 'function') {
@@ -223,13 +225,17 @@
         window.onAdDismissed = function() {
           clearTimeout(timeout);
           adShown = true;
-          adOverlay.style.display = 'none';
+          if (minLoadingTimePassed) {
+            adOverlay.style.display = 'none';
+          }
           callback(true);
         }
       } else {
         clearTimeout(timeout);
-        adOverlay.style.display = 'none';
-        callback(false);
+        setTimeout(() => {
+          adOverlay.style.display = 'none';
+          callback(false);
+        }, 3000); // Fallback after 3s in web
       }
     }
 
@@ -256,7 +262,7 @@
             totalAds++;
             localStorage.setItem('todaysAds', todaysAds);
             localStorage.setItem('totalAds', totalAds);
-            todayAdCount.textContent = todaysAds;
+            todayAdCount.textContent = todaysAds; // Update counter immediately
           }
           showResultPage();
         });
