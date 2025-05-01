@@ -16,7 +16,7 @@
     </style>
 </head>
 <body>
-    <h1> Contact Us Form </h1>
+    <h1>Contact Us</h1>
     <form id="contactForm">
         <div class="form-group">
             <label for="name">Name:</label>
@@ -38,33 +38,33 @@
         document.getElementById('contactForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // InfinityFree PHP फाइल का URL
-            const phpFileUrl = 'https://hii.infinityfreeapp.com/form-handler.php';
-            
-            fetch(phpFileUrl, {
+            fetch('https://hii.infinityfreeapp.com/form-handler.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: new URLSearchParams(new FormData(this))
             })
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) throw new Error('Network error');
+                return response.json();
+            })
             .then(data => {
                 const responseDiv = document.getElementById('responseMessage');
                 responseDiv.style.display = 'block';
                 
-                if(data.includes('success')) {
+                if(data.status === 'success') {
                     responseDiv.className = 'message success';
-                    responseDiv.textContent = 'Thank you! Your message has been sent.';
+                    responseDiv.textContent = data.message;
                     document.getElementById('contactForm').reset();
                 } else {
                     responseDiv.className = 'message error';
-                    responseDiv.textContent = 'Error: ' + data;
+                    responseDiv.textContent = 'Error: ' + data.message;
                 }
             })
             .catch(error => {
                 document.getElementById('responseMessage').className = 'message error';
-                document.getElementById('responseMessage').textContent = 'Network error: ' + error;
+                document.getElementById('responseMessage').textContent = 'Error: ' + error.message;
                 document.getElementById('responseMessage').style.display = 'block';
             });
         });
