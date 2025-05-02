@@ -590,7 +590,7 @@
 
         // Show interstitial ad for coins (Android only)
         function showInterstitialAdForCoins() {
-            if (window.Android && typeof window.Android.showInterstitialAd === 'function') {
+            if (window.Android && typeof window.Android.showRewardedAd === 'function') {
                 // Android version - setup callback
                 window.adCompleteCallback = function(success) {
                     if (success) {
@@ -612,7 +612,7 @@
                         });
                     }
                 };
-                window.Android.showInterstitialAd();
+                window.Android.showRewardedAd();
             } else {
                 // Web version - no coins added
                 Swal.fire({
