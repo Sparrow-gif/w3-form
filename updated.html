@@ -3,58 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase Google Login - One Account per Device</title>
+  <title>Quiz Page</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
       text-align: center;
-      margin-top: 50px;
+      padding: 20px;
     }
-    button {
+    #userInfo {
+      margin: 20px auto;
+      padding: 20px;
+      max-width: 400px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    #signOut {
       padding: 10px 20px;
-      background: #4285F4;
+      background: #dc3545;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
     }
-    button:hover {
-      background: #3367D6;
-    }
-    #userInfo {
-      margin-top: 20px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      max-width: 300px;
-      margin-left: auto;
-      margin-right: auto;
-    }
   </style>
 </head>
 <body>
-  <h1>Google Login with Firebase</h1>
+  <h1>Quiz Page</h1>
   
-  <button id="googleSignIn">Sign in with Google</button>
-  <button id="signOut" style="display: none;">Sign Out</button>
-  
-  <div id="userInfo" style="display: none;">
-    <h3>Welcome, <span id="userName"></span>!</h3>
+  <div id="userInfo">
+    <h2>Welcome, <span id="userName"></span>!</h2>
+    <img id="userPhoto" width="100" style="border-radius: 50%; margin: 10px;">
     <p>Email: <span id="userEmail"></span></p>
-    <img id="userPhoto" width="100" style="border-radius: 50%;">
   </div>
+  
+  <button id="signOut">Sign Out</button>
 
-  <!-- Firebase Modular SDK (v9+) -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { 
       getAuth, 
-      GoogleAuthProvider, 
-      signInWithPopup, 
       signOut,
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
-    // Your Firebase configuration
+    // Initialize Firebase (same config as index.html)
     const firebaseConfig = {
       apiKey: "AIzaSyBFLW2TFvsl6w3EsFUuLwllFozp2TARFkQ",
       authDomain: "solveit-e64f8.firebaseapp.com",
@@ -64,78 +58,45 @@
       appId: "1:115582794210:web:d7bbc03299cb53f0b1a1bb",
       measurementId: "G-1FQHQ4M24S"
     };
-
-    // Initialize Firebase
+    
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-
+    
     // DOM Elements
-    const googleSignInBtn = document.getElementById('googleSignIn');
-    const signOutBtn = document.getElementById('signOut');
-    const userInfoDiv = document.getElementById('userInfo');
     const userNameSpan = document.getElementById('userName');
     const userEmailSpan = document.getElementById('userEmail');
     const userPhotoImg = document.getElementById('userPhoto');
+    const signOutBtn = document.getElementById('signOut');
 
-    // Google Sign-In
-    googleSignInBtn.addEventListener('click', async () => {
-      try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        checkSingleAccount(user);
-      } catch (error) {
-        console.error("Error:", error);
-        alert("Login failed: " + error.message);
+    // Check Auth State
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Show user info
+        userNameSpan.textContent = user.displayName || 'User';
+        userEmailSpan.textContent = user.email;
+        userPhotoImg.src = user.photoURL || 'https://via.placeholder.com/100';
+      } else {
+        // Redirect to login if not authenticated
+        window.location.href = 'index.html';
       }
     });
 
-    // Sign Out
+    // Sign Out Handler
     signOutBtn.addEventListener('click', async () => {
       try {
         await signOut(auth);
-        alert("Signed out successfully!");
+        await Swal.fire({
+          icon: 'success',
+          title: 'Signed Out',
+          text: 'You have been logged out successfully!',
+        });
+        window.location.href = 'index.html';
       } catch (error) {
-        console.error("Sign out error:", error);
-      }
-    });
-
-    // Check for single account per device
-    function checkSingleAccount(user) {
-      const storedUserId = localStorage.getItem('deviceUserId');
-      
-      if (!storedUserId) {
-        localStorage.setItem('deviceUserId', user.uid);
-        updateUI(user);
-      } 
-      else if (storedUserId === user.uid) {
-        updateUI(user);
-      } 
-      else {
-        signOut(auth);
-        alert("❌ Only one Google account per device is allowed!");
-      }
-    }
-
-    // Update UI
-    function updateUI(user) {
-      googleSignInBtn.style.display = "none";
-      signOutBtn.style.display = "block";
-      userInfoDiv.style.display = "block";
-      
-      userNameSpan.textContent = user.displayName || "User";
-      userEmailSpan.textContent = user.email;
-      userPhotoImg.src = user.photoURL || "https://via.placeholder.com/100";
-    }
-
-    // Auth State Listener
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        checkSingleAccount(user);
-      } else {
-        googleSignInBtn.style.display = "block";
-        signOutBtn.style.display = "none";
-        userInfoDiv.style.display = "none";
+        Swal.fire({
+          icon: 'error',
+          title: 'Sign Out Failed',
+          text: error.message,
+        });
       }
     });
   </script>
